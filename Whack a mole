@@ -1,0 +1,466 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#171044">
+<title>Mole Mayhem!</title>
+<style>
+:root {
+  --ink: #171044;
+  --pink: #ff58a8;
+  --yellow: #ffe66d;
+  --mint: #79f2c0;
+  --purple: #8057ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100svh; color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--ink);
+  background-image: radial-gradient(#ffffff20 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+  overscroll-behavior: none;
+}
+button, input { font: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+button:focus-visible, input:focus-visible {
+  outline: 3px solid white; outline-offset: 4px;
+}
+.app {
+  width: min(100%, 480px); min-height: 100svh;
+  margin: auto; padding: 18px 18px 24px;
+  display: flex; flex-direction: column;
+}
+.topline {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 900; letter-spacing: 2px;
+  color: var(--mint);
+}
+.logo { font-size: 18px; }
+.pill {
+  background: #ffffff15; border: 1px solid #ffffff25;
+  border-radius: 99px; padding: 7px 12px;
+}
+h1 {
+  font-size: clamp(42px, 12vw, 66px); line-height: .95;
+  letter-spacing: -3px; margin: 18px 0 12px;
+  font-weight: 1000; text-align: center;
+}
+h1 span { color: var(--yellow); }
+.subtitle { text-align: center; color: #d0c9f5; margin: 0 0 22px; }
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.active { display: flex; animation: appear .3s ease both; }
+@keyframes appear {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+label { font-size: 13px; font-weight: 800; margin: 0 0 8px 4px; }
+.name-input {
+  width: 100%; padding: 16px; color: white;
+  border: 2px solid #ffffff35; border-radius: 16px;
+  background: #ffffff10; margin-bottom: 14px;
+}
+.name-input::placeholder { color: #aaa3ce; }
+.big-button {
+  width: 100%; padding: 18px; border: 0; border-radius: 17px;
+  background: var(--yellow); color: var(--ink);
+  font-weight: 1000; font-size: 20px;
+  box-shadow: 0 6px 0 #c9a72b;
+  transition: transform .1s, box-shadow .1s;
+}
+.big-button:active { transform: translateY(4px); box-shadow: 0 2px 0 #c9a72b; }
+.secondary {
+  background: var(--pink); box-shadow: 0 5px 0 #b72b75;
+  margin-top: 12px;
+}
+.hero {
+  margin: 8px 0 20px; text-align: center;
+  font-size: 100px; line-height: 1.15;
+  filter: drop-shadow(0 8px 0 #0003);
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob { 50% { transform: translateY(-8px) rotate(3deg); } }
+.instructions {
+  background: #ffffff0d; border: 1px solid #ffffff20;
+  border-radius: 18px; padding: 14px 16px;
+  margin: 20px 0; color: #ddd7fa; font-size: 13px;
+  line-height: 1.7;
+}
+.instructions strong { color: var(--mint); }
+.stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  margin: 12px 0 18px;
+}
+.stat {
+  text-align: center; padding: 11px 3px; border-radius: 15px;
+  background: #ffffff10; border: 1px solid #ffffff1d;
+}
+.stat small {
+  display: block; font-size: 10px; letter-spacing: 1px;
+  font-weight: 900; color: #bcb3e8;
+}
+.stat strong { display: block; font-size: 25px; line-height: 1.5; }
+#timer { color: var(--yellow); }
+.progress {
+  height: 7px; background: #ffffff20; border-radius: 99px;
+  overflow: hidden; margin-bottom: 16px;
+}
+#timebar { height: 100%; width: 100%; background: var(--mint); transition: width .15s linear; }
+.greeting { text-align: center; font-weight: 800; margin: 0 0 14px; }
+.board {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px; margin: auto 0; padding: 8px 0 18px;
+  touch-action: pan-y;
+}
+.hole {
+  aspect-ratio: 1; min-width: 0; position: relative;
+  border: 0; border-radius: 50%; overflow: hidden;
+  background: #31226e; box-shadow: inset 0 8px 0 #10092f;
+  padding: 0; -webkit-tap-highlight-color: transparent;
+}
+.hole::after {
+  content: ""; position: absolute; left: 8%; right: 8%;
+  bottom: 9%; height: 23%; border-radius: 50%;
+  background: #120b36; z-index: 3;
+}
+.mole {
+  position: absolute; left: 0; right: 0; bottom: 3%;
+  font-size: clamp(43px, 13vw, 66px); line-height: 1;
+  transform: translateY(110%); transition: transform .15s ease-out;
+  z-index: 2; user-select: none;
+}
+.hole.up .mole { transform: translateY(0); }
+.hole.gold .mole { filter: drop-shadow(0 0 10px var(--yellow)); }
+.hole.hit { background: #4c378c; }
+.hole.hit .mole { transform: scale(1.2) translateY(-10%); }
+.hole .points {
+  position: absolute; z-index: 5; top: 12%; left: 0; right: 0;
+  font-size: 22px; font-weight: 1000; color: var(--yellow);
+  opacity: 0; transform: translateY(10px);
+}
+.hole.hit .points { animation: pop .45s ease forwards; }
+@keyframes pop { 20% { opacity: 1; transform: translateY(-4px); } 100% { opacity: 0; transform: translateY(-25px); } }
+.hint { text-align: center; font-size: 12px; color: #bcb3e8; margin: 2px 0 12px; }
+.result-emoji { font-size: 80px; text-align: center; margin: 16px 0 4px; }
+.result-score { text-align: center; font-size: 64px; font-weight: 1000; color: var(--yellow); line-height: 1.2; }
+.result-label { text-align: center; color: #d0c9f5; }
+.result-card {
+  background: #ffffff10; border: 1px solid #ffffff20;
+  padding: 18px; border-radius: 20px; margin: 20px 0;
+  text-align: center; line-height: 1.9;
+}
+.result-card strong { color: var(--mint); }
+.footer { text-align: center; color: #8d83bc; font-size: 11px; padding-top: 18px; }
+@media (max-height: 720px) {
+  .app { padding-top: 12px; }
+  h1 { margin: 10px 0; font-size: 45px; }
+  .hero { font-size: 65px; margin: 4px 0 12px; }
+  .instructions { margin: 12px 0; padding: 10px 14px; }
+  .board { gap: 8px; padding: 4px 0 10px; }
+  .mole { font-size: clamp(38px, 11vw, 56px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="topline">
+    <span class="logo">✦ MOLE MAYHEM</span>
+    <span class="pill">ARCADE MODE</span>
+  </div>
+
+  <section id="home" class="screen active">
+    <h1>MOLE<br><span>MAYHEM!</span></h1>
+    <p class="subtitle">Tiny moles. Big chaos. 30 seconds.</p>
+    <div class="hero" aria-hidden="true">🐹</div>
+    <label for="playerName">WHAT SHOULD WE CALL YOU?</label>
+    <input id="playerName" class="name-input" maxlength="18"
+      placeholder="Enter your first name..." autocomplete="given-name">
+    <button id="play" class="big-button">LET'S PLAY! ⚡</button>
+    <div class="instructions">
+      <strong>HOW TO PLAY</strong><br>
+      👆 Tap a mole before it disappears.<br>
+      ✨ Golden moles are worth 3 points!<br>
+      💨 The longer you last, the faster they get.<br>
+      🏆 Beat your best score before time runs out.
+    </div>
+    <div class="stat">
+      <small>YOUR ALL-TIME BEST</small>
+      <strong id="homeBest">0</strong>
+    </div>
+  </section>
+
+  <section id="game" class="screen">
+    <p id="greeting" class="greeting">Ready, player!</p>
+    <div class="stats">
+      <div class="stat"><small>SCORE</small><strong id="score">0</strong></div>
+      <div class="stat"><small>TIME</small><strong id="timer">30</strong></div>
+      <div class="stat"><small>BEST</small><strong id="best">0</strong></div>
+    </div>
+    <div class="progress"><div id="timebar"></div></div>
+    <div id="board" class="board" aria-label="Whack-a-mole game board"></div>
+    <p class="hint">TAP OR SWIPE THE MOLES • SPACEBAR TO WHACK</p>
+  </section>
+
+  <section id="over" class="screen">
+    <h1>TIME'S<br><span>UP!</span></h1>
+    <div id="resultEmoji" class="result-emoji">🏆</div>
+    <p id="resultGreeting" class="subtitle">Great job!</p>
+    <div id="resultScore" class="result-score">0</div>
+    <div class="result-label">POINTS SCORED</div>
+    <div class="result-card">
+      🏆 Personal best: <strong id="finalBest">0</strong><br>
+      ⚡ Moles whacked: <strong id="whacked">0</strong><br>
+      💥 Golden moles: <strong id="goldHits">0</strong>
+      <p id="resultMessage">Can you beat that?</p>
+    </div>
+    <button id="again" class="big-button">PLAY AGAIN! 🔥</button>
+    <button id="homeButton" class="big-button secondary">MAIN MENU</button>
+  </section>
+
+  <div class="footer">MADE FOR QUICK FINGERS & BIG SCORES ✦</div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const screens = ["home", "game", "over"];
+  const holes = [];
+  const characters = ["🐹", "🐭", "🐰", "🦔", "🐿️"];
+  let name = "Player", score = 0, whacked = 0, goldHits = 0;
+  let best = loadBest(), running = false, endAt = 0;
+  let moleTimer = null, clockTimer = null, active = -1;
+  let lastHole = -1, audio = null, lastSpawn = 0;
+  let pointer = null, touchStart = null;
+
+  function loadBest() {
+    try { return Number(localStorage.getItem("moleMayhemBest")) || 0; }
+    catch (_) { return 0; }
+  }
+  function saveBest(value) {
+    try { localStorage.setItem("moleMayhemBest", String(value)); }
+    catch (_) {}
+  }
+  function showScreen(id) {
+    screens.forEach(s => $(s).classList.toggle("active", s === id));
+  }
+  function initBoard() {
+    $("board").innerHTML = "";
+    holes.length = 0;
+    for (let i = 0; i < 9; i++) {
+      const button = document.createElement("button");
+      button.className = "hole";
+      button.type = "button";
+      button.setAttribute("aria-label", "Hole " + (i + 1));
+      button.innerHTML = '<span class="mole" aria-hidden="true">🐹</span><span class="points">+1</span>';
+      button.addEventListener("pointerdown", e => {
+        if (!running) return;
+        e.preventDefault();
+        if (i === active) whack(i);
+      });
+      button.addEventListener("pointerenter", e => {
+        if (e.pointerType === "mouse" && e.buttons && running && i === active) whack(i);
+      });
+      holes.push(button);
+      $("board").appendChild(button);
+    }
+  }
+
+  function sound(freq = 500, duration = .07, type = "sine", volume = .07) {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audio.currentTime);
+      gain.gain.setValueAtTime(volume, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audio.destination);
+      osc.start();
+      osc.stop(audio.currentTime + duration);
+    } catch (_) {}
+  }
+  function popSound(gold) {
+    sound(gold ? 1000 : 600, .09, "triangle", .09);
+    setTimeout(() => sound(gold ? 1400 : 800, .07, "sine", .045), 35);
+  }
+
+  function clearMoles() {
+    holes.forEach(h => h.classList.remove("up", "gold", "hit"));
+    active = -1;
+  }
+  function spawn() {
+    if (!running) return;
+    clearTimeout(moleTimer);
+    holes.forEach(h => h.classList.remove("up", "gold", "hit"));
+
+    let next;
+    do { next = Math.floor(Math.random() * holes.length); }
+    while (next === lastHole && holes.length > 1);
+    lastHole = next;
+    active = next;
+
+    const difficulty = Math.min(score / 30, 1);
+    const gold = Math.random() < .13;
+    const hole = holes[next];
+    hole.classList.toggle("gold", gold);
+    hole.querySelector(".mole").textContent =
+      gold ? "🌟" : characters[Math.floor(Math.random() * characters.length)];
+    hole.querySelector(".points").textContent = gold ? "+3!" : "+1";
+    hole.classList.add("up");
+    lastSpawn = performance.now();
+
+    const visibleFor = Math.max(400, 1050 - score * 9);
+    moleTimer = setTimeout(() => {
+      if (!running || active !== next) return;
+      hole.classList.remove("up", "gold");
+      active = -1;
+      setTimeout(spawn, Math.max(80, 260 - score * 2));
+    }, visibleFor);
+  }
+
+  function whack(i) {
+    if (!running || i !== active) return;
+    const hole = holes[i];
+    const gold = hole.classList.contains("gold");
+    score += gold ? 3 : 1;
+    whacked++;
+    if (gold) goldHits++;
+    $("score").textContent = score;
+    hole.classList.remove("up", "gold");
+    hole.classList.add("hit");
+    hole.querySelector(".points").textContent = gold ? "+3! ✨" : "+1!";
+    active = -1;
+    clearTimeout(moleTimer);
+    popSound(gold);
+    setTimeout(() => hole.classList.remove("hit"), 450);
+    moleTimer = setTimeout(spawn, Math.max(100, 360 - score * 3));
+  }
+
+  function startGame() {
+    if (running) stopGame();
+    name = $("playerName").value.trim().slice(0, 18) || "Player";
+    score = 0;
+    whacked = 0;
+    goldHits = 0;
+    running = true;
+    endAt = performance.now() + 30000;
+    lastHole = -1;
+    $("greeting").textContent = "GO, " + name + "! ⚡";
+    $("score").textContent = "0";
+    $("timer").textContent = "30";
+    $("best").textContent = best;
+    $("timebar").style.width = "100%";
+    showScreen("game");
+    sound(500, .12, "sine");
+    spawn();
+
+    clearInterval(clockTimer);
+    clockTimer = setInterval(() => {
+      if (!running) return;
+      const remaining = Math.max(0, endAt - performance.now());
+      $("timer").textContent = Math.ceil(remaining / 1000);
+      $("timebar").style.width = (remaining / 30000 * 100) + "%";
+      if (remaining <= 8000) {
+        $("timer").style.color = "#ff58a8";
+      } else {
+        $("timer").style.color = "#ffe66d";
+      }
+      if (remaining <= 0) finishGame();
+    }, 50);
+  }
+
+  function stopGame() {
+    running = false;
+    clearTimeout(moleTimer);
+    clearInterval(clockTimer);
+    clearMoles();
+  }
+
+  function finishGame() {
+    if (!running) return;
+    stopGame();
+    sound(330, .18, "triangle");
+    setTimeout(() => sound(220, .25, "triangle"), 130);
+    const newRecord = score > best;
+    if (newRecord) {
+      best = score;
+      saveBest(best);
+    }
+    $("resultEmoji").textContent = newRecord && score > 0 ? "👑" :
+      score >= 25 ? "🏆" : score >= 12 ? "🔥" : "🐹";
+    $("resultGreeting").textContent = newRecord && score > 0 ?
+      "NEW PERSONAL BEST, " + name.toUpperCase() + "!" :
+      "Nice try, " + name + "!";
+    $("resultScore").textContent = score;
+    $("finalBest").textContent = best;
+    $("whacked").textContent = whacked;
+    $("goldHits").textContent = goldHits;
+    $("resultMessage").textContent = score >= 30 ? "You're a mole-whacking machine!" :
+      score >= 15 ? "Quick fingers! Can you do even better?" :
+      "Keep practising. Those moles won't stand a chance!";
+    $("homeBest").textContent = best;
+    showScreen("over");
+  }
+
+  $("play").addEventListener("click", startGame);
+  $("again").addEventListener("click", startGame);
+  $("homeButton").addEventListener("click", () => {
+    stopGame();
+    $("homeBest").textContent = best;
+    showScreen("home");
+  });
+
+  // Keyboard support: 1-9 target individual holes; space whacks the active mole.
+  document.addEventListener("keydown", e => {
+    if (e.key === "Enter" && $("home").classList.contains("active")) {
+      startGame();
+      return;
+    }
+    if (!running || e.repeat) return;
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (active >= 0) whack(active);
+      return;
+    }
+    if (/^[1-9]$/.test(e.key)) {
+      const i = Number(e.key) - 1;
+      if (i === active) whack(i);
+    }
+  });
+
+  // Swipe across the board to hit any mole you pass over.
+  $("board").addEventListener("pointerdown", e => {
+    pointer = e.pointerId;
+    touchStart = { x: e.clientX, y: e.clientY };
+  });
+  $("board").addEventListener("pointermove", e => {
+    if (pointer !== e.pointerId || !running || !e.buttons) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const hole = el && el.closest(".hole");
+    if (hole && hole.classList.contains("up")) {
+      const i = holes.indexOf(hole);
+      if (i >= 0) whack(i);
+    }
+  });
+  function clearPointer() { pointer = null; touchStart = null; }
+  $("board").addEventListener("pointerup", clearPointer);
+  $("board").addEventListener("pointercancel", clearPointer);
+  $("playerName").addEventListener("keydown", e => {
+    if (e.key === "Enter") startGame();
+  });
+
+  initBoard();
+  $("homeBest").textContent = best;
+})();
+</script>
+</body>
+</html>
